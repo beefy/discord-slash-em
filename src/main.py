@@ -1,6 +1,7 @@
 import os
 import discord
 import paramiko
+import time
 
 TOKEN = os.getenv('DISCORD_TOKEN')
 slashem_user = os.getenv('USER')
@@ -34,6 +35,15 @@ async def on_message(message: str) -> None:
         await message.channel.send(brooklyn_99_quotes[2])
 
 
+def ssh_command(ssh_client, command):
+    stdin, stdout, stderr = ssh_client.exec_command('')
+    stdin.write(f'{command}\n')
+    stdin.flush()
+    time.sleep(2)
+    stdin.channel.shutdown_write()
+    print(f'Slashem screen: {stdout.read().decode()}')
+
+
 def call_ssh(slashem_command: str) -> str:
     try:
         print('connecting to ssh')
@@ -41,15 +51,7 @@ def call_ssh(slashem_command: str) -> str:
         ssh_client.connect(hostname='alt.org', username='nethack', password='')
 
         print('logging into slashem account')
-        stdin, stdout, stderr = ssh_client.exec_command('')
-        stdin.write('l\n')
-        stdin.flush()
-        # stdin.write(f'{slashem_user}\n')
-        # stdin.flush()
-        # stdin.write(f'{slashem_pass}\n')
-        # stdin.flush()
-        stdin.channel.shutdown_write()
-        print(f'Slashem screen: {stdout.read().decode()}')
+        ssh_command(ssh_client, f'l{slashem_user}\n{slashem_pass}\n')
 
     finally:
         print('ending ssh session')
