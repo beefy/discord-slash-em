@@ -11,7 +11,7 @@ ssh_client = paramiko.SSHClient()
 
 
 @discord_client.event
-async def on_ready():
+async def on_ready() -> None:
     print(f'{discord_client.user} is connected.\n')
 
 
@@ -21,44 +21,38 @@ async def on_message(message: str) -> None:
     if message.author == discord_client.user:
         return
 
-    brooklyn_99_quotes = [
-        'I\'m the human form of the 💯 emoji.',
-        'Bingpot!',
-        (
-            'Cool. Cool cool cool cool cool cool cool, '
-            'no doubt no doubt no doubt no doubt.'
-        ),
-    ]
-
-    if message.content == '99!':
-        # response = random.choice(brooklyn_99_quotes)
-        await message.channel.send(brooklyn_99_quotes[2])
-
-
-def ssh_command(ssh_client, command):
-    stdin, stdout, stderr = ssh_client.exec_command('')
-    stdin.write(f'{command}\n')
-    stdin.flush()
-    time.sleep(2)
-    stdin.channel.shutdown_write()
-    print(f'Slashem screen: {stdout.read().decode()}')
+    # todo, parse message content and run discord cmd on ssh
+    if message.content == 'slashem!':
+        slashem_screen = call_ssh(message.content)
+        output = slashem_screen.encode('utf8').decode('latin-1')
+        await message.channel.send(output)
 
 
 def call_ssh(slashem_command: str) -> str:
+    screen = "Something went wrong"
     try:
         print('connecting to ssh')
         ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         ssh_client.connect(hostname='alt.org', username='nethack', password='')
+        stdin, stdout, stderr = ssh_client.exec_command('')
 
         print('logging into slashem account')
-        ssh_command(ssh_client, f'l{slashem_user}\n{slashem_pass}\n')
+        stdin.write(f'l{slashem_user}\n{slashem_pass}\npp')
+        stdin.flush()
+
+        print('closing stdin and reading stdout')
+        stdin.channel.shutdown_write()
+        screen = 'NetHack' + stdout.read().decode().split('NetHack')[-1]
+        print(f'slashem screen: {screen}')
 
     finally:
         print('ending ssh session')
         ssh_client.close()
 
+    return screen
+
 
 if __name__ == "__main__":
     # start the client
-    # discord_client.run(TOKEN)
-    call_ssh('')
+    discord_client.run(TOKEN)
+    # call_ssh('')
