@@ -1,7 +1,6 @@
 import os
 import discord
 import paramiko
-import time
 
 TOKEN = os.getenv('DISCORD_TOKEN')
 slashem_user = os.getenv('USER')
@@ -55,4 +54,3 @@ def call_ssh(slashem_command: str) -> str:
 if __name__ == "__main__":
     # start the client
     discord_client.run(TOKEN)
-    # call_ssh('')
