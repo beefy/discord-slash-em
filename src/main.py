@@ -48,8 +48,8 @@ def call_ssh(slashem_command: str) -> str:
         # stdin.flush()
         # stdin.write(f'{slashem_pass}\n')
         # stdin.flush()
-        stdin.channel.close()
-        print(f'Slashem screen: {stdout.readlines()}')
+        stdin.channel.shutdown_write()
+        print(f'Slashem screen: {stdout.read().decode()}')
 
     finally:
         print('ending ssh session')
