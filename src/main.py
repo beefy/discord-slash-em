@@ -1,36 +1,60 @@
 import os
 import discord
-from dotenv import load_dotenv
-import subprocess
+import paramiko
+from ansitoimg.render import ansiToRaster
 
-load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
+SLASHEM_USER = os.getenv('USER')
+SLASHEM_PASS = os.getenv('PASS')
+DISCORD_CLIENT = discord.Client()
+SSH_CLIENT = paramiko.SSHClient()
 
-client = discord.Client()
 
-@client.event
-async def on_ready():
-    print(f'{client.user} is connected.\n')
+@DISCORD_CLIENT.event
+async def on_ready() -> None:
+    print(f'{DISCORD_CLIENT.user} is connected.\n')
 
-@client.event
-async def on_message(message):
+
+@DISCORD_CLIENT.event
+async def on_message(message: str) -> None:
     # ignore messages from ego
-    if message.author == client.user:
+    if message.author == DISCORD_CLIENT.user:
         return
 
-    brooklyn_99_quotes = [
-        'I\'m the human form of the 💯 emoji.',
-        'Bingpot!',
-        (
-            'Cool. Cool cool cool cool cool cool cool, '
-            'no doubt no doubt no doubt no doubt.'
-        ),
-    ]
+    # todo, parse message content and run discord cmd on ssh
+    if message.content == 'slashem!':
+        slashem_screen = call_ssh(message.content)
+        await message.channel.send(slashem_screen)
 
-    if message.content == '99!':
-        # response = random.choice(brooklyn_99_quotes)
-        await message.channel.send(brooklyn_99_quotes[2])
 
-    # res = subprocess.Popen("ssh {user}@{host} {cmd}".format(user=user, host=host, cmd=message), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+def call_ssh(slashem_command: str) -> str:
+    screen = "Something went wrong"
+    try:
+        print('connecting to ssh')
+        SSH_CLIENT.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        SSH_CLIENT.connect(hostname='alt.org', username='nethack', password='')
+        stdin, stdout, stderr = SSH_CLIENT.exec_command('')
 
-client.run(TOKEN)
+        print('logging into slashem account')
+        stdin.write(f'l{SLASHEM_USER}\n{SLASHEM_PASS}\npp')
+        stdin.flush()
+
+        print('closing stdin and reading stdout')
+        stdin.channel.shutdown_write()
+        screen = 'NetHack' + stdout.read().decode().split('NetHack')[-1]
+        print(f'slashem screen: {screen}')
+
+    finally:
+        print('ending ssh session')
+        SSH_CLIENT.close()
+
+    output = screen.encode('utf8')
+    # ValueError: invalid literal for int() with base 10: '3;1H         By Stichting Mathe'
+    # ansiToRaster(output, "screen.png")
+    return screen
+
+
+if __name__ == "__main__":
+    # start the client
+    # DISCORD_CLIENT.run(TOKEN)
+    call_ssh('')

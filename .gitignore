@@ -2,6 +2,7 @@
 # See https://github.com/github/gitignore for examples and templates.
 
 .env
+*.png
 
 #################################
 # Python Server Side            #
