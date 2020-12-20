@@ -1,21 +1,23 @@
 import os
 import discord
-from dotenv import load_dotenv
-import subprocess
+import paramiko
 
-load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
+slashem_user = os.getenv('USER')
+slashem_pass = os.getenv('PASS')
+discord_client = discord.Client()
+ssh_client = paramiko.SSHClient()
 
-client = discord.Client()
 
-@client.event
+@discord_client.event
 async def on_ready():
-    print(f'{client.user} is connected.\n')
+    print(f'{discord_client.user} is connected.\n')
 
-@client.event
-async def on_message(message):
+
+@discord_client.event
+async def on_message(message: str) -> None:
     # ignore messages from ego
-    if message.author == client.user:
+    if message.author == discord_client.user:
         return
 
     brooklyn_99_quotes = [
@@ -31,6 +33,30 @@ async def on_message(message):
         # response = random.choice(brooklyn_99_quotes)
         await message.channel.send(brooklyn_99_quotes[2])
 
-    # res = subprocess.Popen("ssh {user}@{host} {cmd}".format(user=user, host=host, cmd=message), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
 
-client.run(TOKEN)
+def call_ssh(slashem_command: str) -> str:
+    try:
+        print('connecting to ssh')
+        ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh_client.connect(hostname='alt.org', username='nethack', password='')
+
+        print('logging into slashem account')
+        stdin, stdout, stderr = ssh_client.exec_command('')
+        stdin.write('l\n')
+        stdin.flush()
+        # stdin.write(f'{slashem_user}\n')
+        # stdin.flush()
+        # stdin.write(f'{slashem_pass}\n')
+        # stdin.flush()
+        stdin.channel.close()
+        print(f'Slashem screen: {stdout.readlines()}')
+
+    finally:
+        print('ending ssh session')
+        ssh_client.close()
+
+
+if __name__ == "__main__":
+    # start the client
+    # discord_client.run(TOKEN)
+    call_ssh('')
